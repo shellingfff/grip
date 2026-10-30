@@ -1,0 +1,64 @@
+:root {
+  color-scheme: light;
+  --page-bg: #ffffff;
+  --page-fg: #24292f;
+  --muted-bg: #f6f8fa;
+  --border: #d0d7de;
+  --link: #0969da;
+}
+[data-color-mode="dark"] {
+  color-scheme: dark;
+  --page-bg: #171717;
+  --page-fg: #e6e6e6;
+  --muted-bg: #262626;
+  --border: #525252;
+  --link: #79b8ff;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--page-bg);
+  color: var(--page-fg);
+  font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.container-xl { max-width: 1040px; margin: auto; padding: 0 20px; }
+.Box, .timeline-comment { border: 1px solid var(--border); border-radius: 6px; }
+.Box-header, .timeline-comment-header { padding: 12px 24px; }
+.Box-title { margin: 0; font-size: 16px; }
+.Box-body, .comment-body { padding: 24px; min-width: 0; }
+.markdown-body { overflow-wrap: anywhere; }
+.markdown-body > :first-child { margin-top: 0; }
+.markdown-body h1 { font-size: 32px; }
+.markdown-body h2 { font-size: 24px; }
+.markdown-body h1, .markdown-body h2 {
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.3;
+}
+.markdown-body a { color: var(--link); text-decoration: none; }
+.markdown-body a:hover { text-decoration: underline; }
+.markdown-body img { max-width: 100%; }
+.markdown-body pre {
+  padding: 16px;
+  overflow: auto;
+  background: var(--muted-bg);
+  border-radius: 6px;
+}
+.markdown-body code { font-family: monospace; font-size: 14px; }
+.markdown-body :not(pre) > code { padding: 2px 4px; background: var(--muted-bg); }
+.markdown-body blockquote {
+  margin-left: 0;
+  padding-left: 16px;
+  border-left: 4px solid var(--border);
+}
+.markdown-body table { display: block; max-width: 100%; overflow: auto; border-collapse: collapse; }
+.markdown-body th, .markdown-body td { padding: 6px 13px; border: 1px solid var(--border); }
+.markdown-body tr:nth-child(even) { background: var(--muted-bg); }
+.markdown-body hr { border: 0; border-top: 1px solid var(--border); }
+.markdown-body pre.mermaid { background: transparent; text-align: center; }
+.markdown-body .mermaid svg { max-width: 100%; height: auto; }
+@media (max-width: 600px) {
+  .container-xl { padding: 0 12px; }
+  .Box-body, .comment-body { padding: 16px; }
+  .preview-page { margin-top: 20px; }
+}

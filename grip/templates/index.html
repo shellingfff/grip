@@ -33,7 +33,31 @@
 {%- endblock -%}
 
 {%- block scripts -%}
+  {% if mermaid_script %}
+  <script>{{ mermaid_script|safe }}</script>
+  {% elif autorefresh_url or 'class="mermaid"' in content %}
+  <script src="{{ url_for('static', filename='mermaid.min.js') }}"></script>
+  {%- endif %}
   <script>
+    if (typeof mermaid !== 'undefined') mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: 'strict',
+      theme: document.documentElement.dataset.colorMode === 'dark' ? 'dark' : 'default'
+    });
+    var mermaidQueue = Promise.resolve();
+
+    function renderMermaid() {
+      if (typeof mermaid === 'undefined') return;
+      mermaidQueue = mermaidQueue.then(function() {
+        return mermaid.run({
+          nodes: document.querySelectorAll('#grip-content .mermaid:not([data-processed])'),
+          suppressErrors: true
+        });
+      }).catch(function(error) {
+        console.error('Mermaid rendering failed:', error);
+      });
+    }
+
     function showCanonicalImages() {
       var images = document.getElementsByTagName('img');
       if (!images) {
@@ -72,6 +96,7 @@
           document.title = initialTitle;
           contentElement.innerHTML = msg.content;
           showCanonicalImages();
+          renderMermaid();
         }
       }
 
@@ -92,6 +117,7 @@
     }
 
     showCanonicalImages();
+    renderMermaid();
 
     var autorefreshUrl = document.getElementById('preview-page').getAttribute('data-autorefresh-url');
     if (autorefreshUrl) {

@@ -21,8 +21,8 @@ from mocks import (
 
 from grip import (
     DEFAULT_FILENAME, DirectoryReader, GitHubAssetManager, GitHubRenderer,
-    Grip, ReadmeNotFoundError, ReadmeReader, ReadmeRenderer, TextReader,
-    create_app)
+    Grip, OfflineRenderer, ReadmeNotFoundError, ReadmeReader, ReadmeRenderer,
+    TextReader, create_app, render_content)
 
 
 # TODO: Test DEFAULT_API_URL, DEFAULT_FILENAMES, DEFAULT_GRIPHOME,
@@ -219,10 +219,38 @@ def test_github_renderer():
         assert len(responses.calls) == 2
 
 
-def test_offline_renderer():
-    # TODO: Test all GitHub rendering features and get the renderer to pass
-    # FUTURE: Expose OfflineRenderer once all Markdown features are tested
-    pass
+@pytest.mark.parametrize('lazy_imports', [False, True])
+def test_offline_renderer(monkeypatch, lazy_imports):
+    if lazy_imports:
+        monkeypatch.setattr('grip.renderers.markdown', None)
+        monkeypatch.setattr('grip.renderers.UrlizeExtension', None)
+
+    def unexpected_request(*args, **kwargs):
+        pytest.fail('Offline rendering must not send HTTP requests')
+
+    monkeypatch.setattr(
+        'requests.sessions.Session.request', unexpected_request)
+    text = '# Hello\n\nSome **bold** text.\n\nhttps://example.com/'
+    expected = (
+        '<h1 id="hello">Hello</h1>\n'
+        '<p>Some <strong>bold</strong> text.</p>\n'
+        '<p><a href="https://example.com/">https://example.com/</a></p>')
+    assert OfflineRenderer().render(text) == expected
+    assert render_content(text, render_offline=True) == expected
+
+
+def test_mermaid_fences():
+    html = render_content(input_file('mermaid.md'), render_offline=True)
+    assert html.count('<pre class="mermaid">') == 3
+    assert 'A[Markdown] --&gt; B[HTML]' in html
+    assert 'Alice-&gt;&gt;Bob: Hello' in html
+    assert 'Document &lt;|-- Markdown' in html
+    assert 'class="highlight"' in html
+    html = render_content(
+        '```mermaid\ngraph TD\n A[<script>alert(1)</script>]\n```',
+        render_offline=True)
+    assert '<script>' not in html
+    assert '&lt;script&gt;' in html
 
 
 def test_readme_asset_manager():

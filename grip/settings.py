@@ -7,8 +7,8 @@ this directory or in ~/.grip/settings.py instead.
 """
 
 
-HOST = 'localhost'
-PORT = 6419
+HOST = '0.0.0.0'
+PORT = 8888
 DEBUG = False
 DEBUG_GRIP = False
 CACHE_DIRECTORY = 'cache-{version}'

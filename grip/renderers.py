@@ -88,7 +88,7 @@ class OfflineRenderer(ReadmeRenderer):
     """
     Renders the specified Readme locally using pure Python.
 
-    Note: This is currently an incomplete feature.
+    GitHub-specific syntax may differ from GitHub's rendering.
     """
     def __init__(self, user_content=None, context=None):
         super(OfflineRenderer, self).__init__(user_content, context)
@@ -97,15 +97,20 @@ class OfflineRenderer(ReadmeRenderer):
         """
         Renders the specified markdown content and embedded styles.
         """
-        if markdown is None:
-            import markdown
-        if UrlizeExtension is None:
-            from .mdx_urlize import UrlizeExtension
-        return markdown.markdown(text, extensions=[
-            'fenced_code',
-            'codehilite(css_class=highlight)',
-            'toc',
-            'tables',
-            'sane_lists',
-            UrlizeExtension(),
+        markdown_module = markdown
+        urlize_extension = UrlizeExtension
+        if markdown_module is None:
+            import markdown as markdown_module
+        if urlize_extension is None:
+            from .vendor.mdx_urlize import UrlizeExtension as urlize_extension
+        from markdown.extensions.codehilite import CodeHiliteExtension
+        from .markdown_extensions import MermaidExtension
+        return markdown_module.markdown(text, extensions=[
+            'markdown.extensions.fenced_code',
+            CodeHiliteExtension(css_class='highlight'),
+            'markdown.extensions.toc',
+            'markdown.extensions.tables',
+            'markdown.extensions.sane_lists',
+            urlize_extension(),
+            MermaidExtension(),
         ])

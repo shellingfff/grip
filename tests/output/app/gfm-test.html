@@ -598,7 +598,28 @@ Violets are Blue</p>
       </div>
     </main>
   </div>
-  </div><script>
+  </div>
+  <script src="/__/grip/static/mermaid.min.js"></script>
+  <script>
+    if (typeof mermaid !== 'undefined') mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: 'strict',
+      theme: document.documentElement.dataset.colorMode === 'dark' ? 'dark' : 'default'
+    });
+    var mermaidQueue = Promise.resolve();
+
+    function renderMermaid() {
+      if (typeof mermaid === 'undefined') return;
+      mermaidQueue = mermaidQueue.then(function() {
+        return mermaid.run({
+          nodes: document.querySelectorAll('#grip-content .mermaid:not([data-processed])'),
+          suppressErrors: true
+        });
+      }).catch(function(error) {
+        console.error('Mermaid rendering failed:', error);
+      });
+    }
+
     function showCanonicalImages() {
       var images = document.getElementsByTagName('img');
       if (!images) {
@@ -637,6 +658,7 @@ Violets are Blue</p>
           document.title = initialTitle;
           contentElement.innerHTML = msg.content;
           showCanonicalImages();
+          renderMermaid();
         }
       }
 
@@ -657,6 +679,7 @@ Violets are Blue</p>
     }
 
     showCanonicalImages();
+    renderMermaid();
 
     var autorefreshUrl = document.getElementById('preview-page').getAttribute('data-autorefresh-url');
     if (autorefreshUrl) {

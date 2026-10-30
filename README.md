@@ -6,9 +6,10 @@ Grip -- GitHub Readme Instant Preview
 
 Render local readme files before sending off to GitHub.
 
-Grip is a command-line server application written in Python that uses the
-[GitHub markdown API][markdown] to render a local readme file. The styles
-and rendering come directly from GitHub, so you'll know exactly how it will appear.
+Grip is a command-line server application written in Python that renders local
+Markdown files offline by default, using Python-Markdown and bundled styles.
+Use `grip --online` to render with the [GitHub markdown API][markdown] and
+GitHub's styles when you need to check GitHub-specific rendering.
 Changes you make to the Readme will be instantly reflected in the browser without
 requiring a page refresh.
 
@@ -46,39 +47,39 @@ To render the readme of a repository:
 ```console
 $ cd myrepo
 $ grip
- * Running on http://localhost:6419/
+ * Running on http://0.0.0.0:8888/
 ```
 
-Now open a browser and visit [http://localhost:6419](http://localhost:6419/).
+Now open a browser and visit [http://localhost:8888](http://localhost:8888/).
 Or run with `-b` and Grip will open a new browser tab for you.
 
 You can also specify a port:
 
 ```console
 $ grip 80
- * Running on http://localhost:80/
+ * Running on http://0.0.0.0:80/
 ```
 
 Or an explicit file:
 
 ```console
 $ grip AUTHORS.md
- * Running on http://localhost:6419/
+ * Running on http://0.0.0.0:8888/
 ```
 
-Alternatively, you could just run `grip` and visit [localhost:6419/AUTHORS.md][AUTHORS.md]
+Alternatively, you could just run `grip` and visit [localhost:8888/AUTHORS.md][AUTHORS.md]
 since grip supports relative URLs.
 
 You can combine the previous examples. Or specify a hostname instead of a port. Or provide both.
 
 ```console
 $ grip AUTHORS.md 80
- * Running on http://localhost:80/
+ * Running on http://0.0.0.0:80/
 ```
 
 ```console
 $ grip CHANGES.md 0.0.0.0
- * Running on http://0.0.0.0:6419/
+ * Running on http://0.0.0.0:8888/
 ```
 
 ```console
@@ -100,6 +101,18 @@ $ grip README.md --export index.html
 Exporting to index.html
 ```
 
+Preview and export work offline by default; no GitHub credentials are needed.
+Remote images linked in your Markdown still require a network connection.
+To use GitHub rendering instead, add `--online`:
+
+```console
+$ grip --online
+$ grip README.md --online --export index.html
+```
+
+The Python API keeps its existing defaults; pass `render_offline=True` when
+calling it to select local rendering.
+
 If you're exporting a bunch of files, you can prevent styles from being inlining to save space with `--no-inline`:
 
 ```console
@@ -111,7 +124,7 @@ Reading and writing from **stdin** and **stdout** is also supported, allowing yo
 
 ```console
 $ cat README.md | grip -
- * Running on http://localhost:6419/
+ * Running on http://0.0.0.0:8888/
 ```
 
 ```console
@@ -128,7 +141,7 @@ This allows you to quickly test how things look by entering Markdown directly in
 $ grip -
 Hello **world**!
 ^D
- * Running on http://localhost:6419/
+ * Running on http://0.0.0.0:8888/
 ```
 
 *Note: `^D` means `Ctrl+D`, which works on Linux and OS X. On Windows you'll have to use `Ctrl+Z`.*
@@ -136,8 +149,8 @@ Hello **world**!
 Rendering as user-content like **comments** and **issues** is also supported, with an optional repository context for linking to issues:
 
 ```console
-$ grip --user-content --context=joeyespo/grip
- * Running on http://localhost:6419/
+$ grip --online --user-content --context=joeyespo/grip
+ * Running on http://0.0.0.0:8888/
 ```
 
 For more details and additional options, see the help:
@@ -150,7 +163,7 @@ $ grip -h
 Access
 ------
 
-Grip strives to be as close to GitHub as possible. To accomplish this, grip
+When using `--online`, Grip strives to be as close to GitHub as possible. It
 uses [GitHub's Markdown API][markdown] so that changes to their rendering
 engine are reflected immediately without requiring you to upgrade grip.
 However, because of this you may hit the API's hourly rate limit. If this
@@ -158,14 +171,14 @@ happens, grip offers a way to access the API using your credentials
 to unlock a much higher rate limit.
 
 ```console
-$ grip --user <your-username> --pass <your-password>
+$ grip --online --user <your-username> --pass <your-password>
 ```
 
 Or use a [personal access token][] with an empty scope (note that a token is
 *required* if your GitHub account is set up with two-factor authentication):
 
 ```console
-$ grip --pass <token>
+$ grip --online --pass <token>
 ```
 
 You can persist these options [in your local configuration](#configuration).
@@ -173,12 +186,15 @@ For security purposes, it's highly recommended that you **use an access token
 over a password**. (You could also keep your password safe by configuring
 Grip to [grab your password from a password manager][keychain-access].)
 
-There's also a [work-in-progress branch][offline-renderer] to provide
-**offline rendering**. Once this resembles GitHub more precisely, it'll
-be exposed in the CLI, and will ultimately be used as a seamless fallback
-engine for when the API can't be accessed.
+Offline rendering supports standard Markdown, tables, fenced code blocks,
+syntax highlighting, heading IDs, automatic links, and Mermaid diagrams.
+Use a fenced code block with the `mermaid` language to include a diagram.
+Mermaid is bundled locally, and inline HTML exports embed its script so they
+can display diagrams offline in a JavaScript-enabled browser.
+GitHub-specific syntax
+such as issue references and task lists may render differently.
 
-Grip always accesses GitHub over HTTPS,
+In online mode, Grip always accesses GitHub over HTTPS,
 so your README and credentials are protected.
 
 
@@ -239,8 +255,8 @@ Configuration
 
 To customize Grip, create `~/.grip/settings.py`, then add one or more of the following variables:
 
-- `HOST`: The host to use when not provided as a CLI argument, `localhost` by default
-- `PORT`: The port to use when not provided as a CLI argument, `6419` by default
+- `HOST`: The host to use when not provided as a CLI argument, `0.0.0.0` by default
+- `PORT`: The port to use when not provided as a CLI argument, `8888` by default
 - `DEBUG`: Whether to use Flask's debugger when an error happens, `False` by default
 - `DEBUG_GRIP`: Prints extended information when an error happens, `False` by default
 - `API_URL`: Base URL for the github API, for example that of a Github Enterprise instance. `https://api.github.com` by default
@@ -286,7 +302,7 @@ You can access the API directly with Python, using it in your own projects:
 from grip import serve
 
 serve(port=8080)
- * Running on http://localhost:8080/
+ * Running on http://0.0.0.0:8080/
 ```
 
 Run main directly:
@@ -295,7 +311,7 @@ Run main directly:
 from grip import main
 
 main(argv=['-b', '8080'])
- * Running on http://localhost:8080/
+ * Running on http://0.0.0.0:8080/
 ```
 
 Or access the underlying Flask application for even more flexibility:
@@ -530,8 +546,8 @@ Grip.run(host=None, port=None, debug=None, use_reloader=None, open_browser=False
 ```
 
 - `host`: The hostname to listen on. Set this to `'0.0.0.0'` to have the server
-          available externally as well, `'localhost'` by default
-- `port`: The port of the webserver. Defaults to `6419`
+          available externally as well, `'0.0.0.0'` by default
+- `port`: The port of the webserver. Defaults to `8888`
 - `debug`: If given, enable or disable debug mode. See [Flask.debug][].
 - `use_reloader`: Should the server automatically restart the python process
                   if modules were changed? `False` by default unless the

@@ -15,6 +15,7 @@ Where:
   <address> is what to listen on, of the form <host>[:<port>], or just <port>
 
 Options:
+  --online          Render using GitHub's API instead of rendering locally.
   --user-content    Render as user-content like comments or issues.
   --context=<repo>  The repository context, only taken into account
                     when using --user-content.
@@ -119,7 +120,8 @@ def main(argv=None, force_utf8=True, patch_svg=True):
     if args['--export']:
         try:
             export(args['<path>'], args['--user-content'], args['--context'],
-                   args['--user'], password, False, args['--wide'],
+                   args['--user'], password, not args['--online'],
+                   args['--wide'],
                    not args['--no-inline'], args['<address>'],
                    args['--api-url'], args['--title'], args['--quiet'], theme)
             return 0
@@ -138,7 +140,8 @@ def main(argv=None, force_utf8=True, patch_svg=True):
     # Run server
     try:
         serve(path, host, port, args['--user-content'], args['--context'],
-              args['--user'], password, False, args['--wide'], False,
+              args['--user'], password, not args['--online'],
+              args['--wide'], False,
               args['--api-url'], args['--title'], not args['--norefresh'],
               args['--browser'], args['--quiet'], theme, None)
         return 0

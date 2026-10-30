@@ -1,6 +1,7 @@
 from __future__ import print_function, unicode_literals
 
 import base64
+import io
 import json
 import mimetypes
 import os
@@ -27,13 +28,13 @@ from flask import (
     send_from_directory, url_for)
 
 from . import __version__
-from .assets import GitHubAssetManager, ReadmeAssetManager
+from .assets import GitHubAssetManager, LocalAssetManager, ReadmeAssetManager
 from .browser import start_browser_when_ready
 from .constants import (
     DEFAULT_GRIPHOME, DEFAULT_GRIPURL, STYLE_ASSET_URLS_INLINE_FORMAT)
 from .exceptions import AlreadyRunningError, ReadmeNotFoundError
 from .readers import DirectoryReader
-from .renderers import GitHubRenderer, ReadmeRenderer
+from .renderers import GitHubRenderer, OfflineRenderer, ReadmeRenderer
 
 
 class Grip(Flask):
@@ -222,6 +223,14 @@ class Grip(Flask):
             data_light_theme = 'light'
             data_dark_theme = 'dark'
 
+        mermaid_script = None
+        if ((self.render_inline or not self.autorefresh) and
+                'class="mermaid"' in content):
+            filename = os.path.join(self.static_folder, 'mermaid.min.js')
+            with io.open(filename, encoding='utf-8') as script:
+                mermaid_script = re.sub(
+                    r'</script', r'<\\/script', script.read(), flags=re.I)
+
         return render_template(
             'index.html', filename=self.reader.filename_for(subpath),
             title=self.title, content=content, favicon=favicon,
@@ -229,7 +238,7 @@ class Grip(Flask):
             wide_style=self.render_wide, style_urls=self.assets.style_urls,
             styles=self.assets.styles, autorefresh_url=autorefresh_url,
             data_color_mode=data_color_mode, data_light_theme=data_light_theme,
-            data_dark_theme=data_dark_theme)
+            data_dark_theme=data_dark_theme, mermaid_script=mermaid_script)
 
     def _render_refresh(self, subpath=None):
         if not self.autorefresh:
@@ -377,6 +386,8 @@ class Grip(Flask):
 
         This is only used if asset_manager is set to None in the constructor.
         """
+        if isinstance(self.renderer, OfflineRenderer):
+            return LocalAssetManager()
         cache_path = None
         cache_directory = self.config['CACHE_DIRECTORY']
         if cache_directory:

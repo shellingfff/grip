@@ -1,6 +1,7 @@
 from __future__ import print_function, unicode_literals
 
 import errno
+import io
 import os
 import posixpath
 import re
@@ -13,6 +14,7 @@ except ImportError:
     from urllib.parse import urljoin
 
 import requests
+from pygments.formatters import HtmlFormatter
 
 from ._compat import safe_join
 
@@ -61,6 +63,20 @@ class ReadmeAssetManager(object):
         URL path.
         """
         pass
+
+
+class LocalAssetManager(ReadmeAssetManager):
+    """Loads bundled styles without downloading or caching assets."""
+
+    def __init__(self):
+        super(LocalAssetManager, self).__init__(None)
+
+    def retrieve_styles(self, asset_url_path):
+        filename = os.path.join(os.path.dirname(__file__), 'static',
+                                'offline.css')
+        with io.open(filename, encoding='utf-8') as stylesheet:
+            self.styles.append(stylesheet.read())
+        self.styles.append(HtmlFormatter().get_style_defs('.highlight'))
 
 
 class GitHubAssetManager(ReadmeAssetManager):
